@@ -1,6 +1,7 @@
-package com.example.lab6
+package com.example.sensor
 
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Bundle
@@ -9,11 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -32,12 +35,21 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
 
                 Surface {
-
+                    val context = LocalContext.current
                     Column(
                         modifier = Modifier
                             .padding(16.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
+                        Button(
+                            onClick = {
+                                val intent = Intent(context, AccelerometerActivity::class.java)
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        ) {
+                            Text("Go to Accelerometer Data")
+                        }
 
                         for (sensor in sensorList) {
 
