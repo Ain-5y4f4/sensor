@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -20,13 +21,16 @@ class AccelerometerActivity : ComponentActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
 
-    // State for UI
+    // State for UI (Task 6.2)
     private var rawX by mutableFloatStateOf(0f)
     private var rawY by mutableFloatStateOf(0f)
     private var rawZ by mutableFloatStateOf(0f)
     private var linearX by mutableFloatStateOf(0f)
     private var linearY by mutableFloatStateOf(0f)
     private var linearZ by mutableFloatStateOf(0f)
+
+    // State for Orientation (Task 6.3)
+    private var phoneOrientation by mutableStateOf("Unknown")
 
     // Low-pass filter for gravity separation
     private val gravity = FloatArray(3)
@@ -39,7 +43,6 @@ class AccelerometerActivity : ComponentActivity(), SensorEventListener {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         setContent {
-            // FIXED: Use MaterialTheme directly instead of AccelerometerTaskTheme
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -51,7 +54,8 @@ class AccelerometerActivity : ComponentActivity(), SensorEventListener {
                         rawZ = rawZ,
                         linearX = linearX,
                         linearY = linearY,
-                        linearZ = linearZ
+                        linearZ = linearZ,
+                        orientation = phoneOrientation
                     )
                 }
             }
@@ -91,12 +95,30 @@ class AccelerometerActivity : ComponentActivity(), SensorEventListener {
                 linearX = x - gravity[0]
                 linearY = y - gravity[1]
                 linearZ = z - gravity[2]
+
+                // --- TASK 6.3: Detect Orientation ---
+                val gX = gravity[0]
+                val gY = gravity[1]
+                val gZ = gravity[2]
+
+                // Earth's gravity is ~9.8. We use 7.0 as a threshold to determine
+                // which axis is currently taking the majority of the gravitational pull.
+                val threshold = 7.0f
+
+                phoneOrientation = when {
+                    gZ > threshold -> "On the table"
+                    gY > threshold -> "Default"
+                    gY < -threshold -> "Upside Down"
+                    gX > threshold -> "Left"
+                    gX < -threshold -> "Right"
+                    else -> phoneOrientation // Keeps the last known state if transitioning
+                }
             }
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Not needed
+        // Not needed for this task
     }
 }
 
@@ -107,7 +129,8 @@ fun AccelerometerDisplay(
     rawZ: Float,
     linearX: Float,
     linearY: Float,
-    linearZ: Float
+    linearZ: Float,
+    orientation: String
 ) {
     Column(
         modifier = Modifier
@@ -116,6 +139,25 @@ fun AccelerometerDisplay(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // --- Task 6.3 UI ---
+        Text(
+            text = "Orientation of phone",
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = orientation,
+            fontSize = 48.sp,
+            lineHeight = 52.sp,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.displayMedium
+        )
+
+        Spacer(modifier = Modifier.height(48.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- Task 6.2 UI ---
         Text("Raw Accelerometer Data", fontSize = 20.sp, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text("X: %.2f".format(rawX))
@@ -123,9 +165,7 @@ fun AccelerometerDisplay(
         Text("Z: %.2f".format(rawZ))
 
         Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider()
 
-        Spacer(modifier = Modifier.height(24.dp))
         Text("Linear Acceleration (Gravity Filtered)", fontSize = 20.sp, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text("X: %.2f".format(linearX))
